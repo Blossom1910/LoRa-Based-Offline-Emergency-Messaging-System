@@ -50,51 +50,51 @@ void loop() {
 
 Reciever: 
 #include <SPI.h>
-#include <LoRa.h> 
+#include <LoRa.h>
 
-// Define pins for Arduino UNO (Receiver)
-#define CS_PIN    10
-#define RST_PIN   9 
-#define IRQ_PIN   2 
+// ---- ESP32 LoRa Pin Configuration (Receiver) ----
+#define SS    18
+#define RST   14
+#define DIO0  26
 
 void setup() {
   Serial.begin(9600);
-  while (!Serial);
-  Serial.println("UNO LoRa Receiver Initializing...");
+  delay(1000);
 
-  LoRa.setPins(CS_PIN, RST_PIN, IRQ_PIN);
+  Serial.println("ESP32 LoRa Receiver");
 
+  // Set LoRa pins
+  LoRa.setPins(SS, RST, DIO0);
+
+  // Initialize LoRa at 433 MHz (MUST match transmitter)
   if (!LoRa.begin(433E6)) {
-    Serial.println("LoRa init failed!");
+    Serial.println("Starting LoRa failed!");
     while (1);
   }
 
-  // --- COMPLETE SYNCHRONIZATION SETTINGS (MUST MATCH TRANSMITTER) ---
-  LoRa.setSpreadingFactor(10); 
-  LoRa.setSignalBandwidth(125E3); 
-  LoRa.setCodingRate4(5); 
-  LoRa.setSyncWord(0xF3);
-  LoRa.enableCrc();
+  // --- MUST MATCH TRANSMITTER SETTINGS ---
+  LoRa.setSpreadingFactor(10);
+  LoRa.setSignalBandwidth(125E3);
+  LoRa.setCodingRate4(5);
 
   Serial.println("LoRa Receiver Ready. Listening...");
 }
 
 void loop() {
-  // Check if a packet has been received
   int packetSize = LoRa.parsePacket();
 
   if (packetSize) {
-    // A packet was received, let's read it
-    String receivedData = "";
-    
-    // --- MODIFIED CODE: Use a for loop to read exactly packetSize bytes ---
-    for (int i = 0; i < packetSize; i++) {
-      receivedData += (char)LoRa.read();
-    }
-
     Serial.print("Received: ");
+
+    String receivedMessage = "";
+
+    while (LoRa.available()) {
+      receivedMessage += (char)LoRa.read();
+    }
+// Print data and RSSI
     Serial.print(receivedData);
     Serial.print(" | RSSI: ");
     Serial.println(LoRa.packetRssi());
   }
 }
+
